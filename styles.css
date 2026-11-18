@@ -204,10 +204,15 @@ a.card:hover, .dest-card:hover { border-color: #cfcabf; }
 
 /* ---------- PLACE ---------- */
 .cat-group {
-  margin: 10px 2px; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  margin: 10px 2px; border: 1px solid var(--line); border-left: 5px solid var(--cat, var(--accent));
   border-radius: 10px; overflow: hidden; background: var(--surface);
 }
-.cat-head { display: flex; align-items: center; gap: 2px; background: var(--cat-head); padding-right: 2px; }
+.cat-head {
+  display: flex; align-items: center; gap: 2px; padding-right: 2px;
+  background: linear-gradient(color-mix(in srgb, var(--cat, var(--accent)) 12%, transparent), color-mix(in srgb, var(--cat, var(--accent)) 12%, transparent)), var(--cat-head);
+}
+.cat-swatch { width: 18px; height: 18px; margin: 0 4px; }
+.cat-palette { border-bottom: 1px solid var(--line); padding-top: 8px; background: var(--surface); }
 .cat-group.open .cat-head { border-bottom: 1px solid var(--line); }
 .cat-toggle { flex: 1; display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 8px 8px; cursor: pointer; text-align: left; min-height: 44px; }
 .cat-toggle:hover { background: var(--hover); }

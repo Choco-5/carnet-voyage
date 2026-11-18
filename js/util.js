@@ -1,15 +1,17 @@
 // Constantes et fonctions utilitaires (dates, catégories, couleurs).
 
 export const CATEGORIES = [
-  { id: 'restaurant', label: 'Restaurants', icon: '🍽️' },
-  { id: 'cafe', label: 'Cafés & bars', icon: '☕' },
-  { id: 'activity', label: 'Activités', icon: '🎟️' },
-  { id: 'culture', label: 'Monuments & culture', icon: '🏛️' },
-  { id: 'viewpoint', label: 'Points de vue', icon: '🌄' },
-  { id: 'lodging', label: 'Hébergements', icon: '🛏️' },
-  { id: 'transport', label: 'Transports', icon: '🚉' },
-  { id: 'other', label: 'Autres', icon: '📍' },
+  { id: 'restaurant', label: 'Restaurants', icon: '🍽️', color: '#e8590c' },
+  { id: 'cafe', label: 'Cafés & bars', icon: '☕', color: '#8d5524' },
+  { id: 'activity', label: 'Activités', icon: '🎟️', color: '#7048e8' },
+  { id: 'culture', label: 'Monuments & culture', icon: '🏛️', color: '#1c7ed6' },
+  { id: 'viewpoint', label: 'Points de vue', icon: '🌄', color: '#2f9e44' },
+  { id: 'lodging', label: 'Hébergements', icon: '🛏️', color: '#0c8599' },
+  { id: 'transport', label: 'Transports', icon: '🚉', color: '#c2255c' },
+  { id: 'other', label: 'Autres', icon: '📍', color: '#868e96' },
 ];
+/** Couleur du volet d'une catégorie (personnalisée par l'utilisateur, sinon couleur par défaut). */
+export const catColor = (data, catId) => safeColor(data.settings?.catColors?.[catId] || catOf(catId).color);
 const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]));
 export const catOf = (id) => CAT[id] || CAT.other;
 export const catIdOf = (place) => (CAT[place.category] ? place.category : 'other');
@@ -19,6 +21,7 @@ export const DAY_COLORS = [
   '#c92a2a', '#e67700', '#364fc7', '#66a80f', '#9c36b5', '#8d5524',
 ];
 export const NEUTRAL = '#868e96';
+export const CAT_COLORS = [...DAY_COLORS, '#868e96', '#495057'];
 export const safeColor = (c) => (/^#[0-9a-f]{6}$/i.test(c || '') ? c : NEUTRAL);
 
 export function uid() {

@@ -16,7 +16,7 @@ const STORE = 'kv';
 const KEY = 'data';
 export const DATA_VERSION = 1;
 
-const empty = () => ({ version: DATA_VERSION, trips: [], destinations: [], days: [], places: [], items: [] });
+const empty = () => ({ version: DATA_VERSION, trips: [], destinations: [], days: [], places: [], items: [], settings: { catColors: {} } });
 
 let data = empty();
 const listeners = new Set();
@@ -40,6 +40,10 @@ export function normalize(v) {
   if (!v || typeof v !== 'object') return out;
   for (const k of ['trips', 'destinations', 'days', 'places', 'items']) {
     out[k] = Array.isArray(v[k]) ? v[k].filter((x) => x && typeof x === 'object' && x.id) : [];
+  }
+  const cc = v.settings?.catColors;
+  if (cc && typeof cc === 'object') {
+    for (const [k, c] of Object.entries(cc)) if (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)) out.settings.catColors[k] = c;
   }
   return out;
 }
@@ -224,6 +228,11 @@ export const actions = {
     commit((d) => insertItem(d, dayId, { id: uid(), type: 'note', text, time: '' }, Infinity));
   },
   updateItem: (id, patch) => commit((d) => patchOne(d.items, id, patch)),
+
+  setCategoryColor: (catId, color) => commit((d) => {
+    d.settings = d.settings || { catColors: {} };
+    d.settings.catColors = { ...(d.settings.catColors || {}), [catId]: color };
+  }),
 
   replaceAll(newData) {
     data = normalize(newData);

@@ -2,9 +2,9 @@
 //  - déplier / replier un volet = lecture de la liste
 //  - le petit point = afficher / masquer la catégorie sur la carte
 import { html, useState, useRef, useEffect } from './lib.js';
-import { actions } from './store.js';
+import { actions, getData } from './store.js';
 import { DayPill, Dot, copyText } from './ui.js';
-import { CATEGORIES, catOf, catIdOf, dayShort, mapsUrl, norm } from './util.js';
+import { CATEGORIES, CAT_COLORS, catOf, catIdOf, catColor, dayShort, mapsUrl, norm } from './util.js';
 import { useSortable, revertDom } from './dnd.js';
 
 export function PlacePanel({
@@ -62,6 +62,8 @@ export function PlacePanel({
 
 function CategoryGroup({ cat, items, hidden, isCollapsed, onToggleCat, onToggleCollapse, assignments, days, selected, onSelect, onEdit }) {
   const listRef = useRef();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const color = catColor(getData(), cat.id);
   useSortable(listRef, {
     // On tire une « copie » visuelle : le lieu reste dans PLACE (pas de copie dans les données).
     group: {
@@ -78,7 +80,7 @@ function CategoryGroup({ cat, items, hidden, isCollapsed, onToggleCat, onToggleC
     },
   });
   return html`
-    <div class=${'cat-group' + (hidden ? ' map-hidden' : '') + (isCollapsed ? '' : ' open')}>
+    <div class=${'cat-group' + (hidden ? ' map-hidden' : '') + (isCollapsed ? '' : ' open')} style=${{ '--cat': color }}>
       <div class="cat-head">
         <button class="cat-toggle" onClick=${() => onToggleCollapse(cat.id)} aria-expanded=${!isCollapsed}>
           <span class="chev" aria-hidden="true">▶</span>
@@ -86,8 +88,19 @@ function CategoryGroup({ cat, items, hidden, isCollapsed, onToggleCat, onToggleC
           <span class="cat-label">${cat.label}</span>
           <span class="count">${items.length}</span>
         </button>
+        <button class="swatch cat-swatch" style=${{ background: color, borderColor: color }}
+          onClick=${() => setPaletteOpen(!paletteOpen)} title="Changer la couleur du volet" aria-label=${'Couleur : ' + cat.label}></button>
         <${Dot} on=${!hidden} label=${cat.label} onClick=${() => onToggleCat(cat.id)} />
       </div>
+      ${paletteOpen && html`
+        <div class="palette cat-palette">
+          ${CAT_COLORS.map((c) => html`<button
+            class=${'swatch' + (c === color ? ' current' : '')}
+            style=${{ background: c, borderColor: c }}
+            aria-label=${'Couleur ' + c}
+            onClick=${() => { actions.setCategoryColor(cat.id, c); setPaletteOpen(false); }}
+          ></button>`)}
+        </div>`}
       <ul class="place-list" ref=${listRef} hidden=${isCollapsed}>
         ${items.map((p) => html`<${PlaceRow}
           key=${p.id}
