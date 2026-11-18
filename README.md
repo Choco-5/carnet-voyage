@@ -28,7 +28,9 @@ sans serveur et sans frais.
   la destination.
 - **Sauvegarde** : export et import d'un fichier depuis l'accueil.
 
-Règles appliquées : un lieu n'existe qu'une seule fois et ne peut être que dans une journée à la fois.
+Règles appliquées : un lieu n'existe qu'une seule fois dans PLACE, mais il peut être prévu **plusieurs jours**
+(un hôtel, une activité à refaire…), une seule fois par journée. Dans PLACE, un petit rond de couleur s'affiche
+pour chaque journée prévue ; sur la carte, le marqueur est partagé entre les couleurs de ces journées.
 Un hébergement non planifié reste toujours visible sur la carte, sauf si sa catégorie est masquée.
 
 ## Mettre l'application en ligne sur GitHub Pages (gratuit, sans rien installer)

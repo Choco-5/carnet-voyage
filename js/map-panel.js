@@ -1,7 +1,7 @@
 // MAP : carte interactive (MapLibre + tuiles OpenFreeMap / OpenStreetMap, gratuites).
 // Marqueur : icône = catégorie, couleur = journée (neutre si non planifié).
 import { html, useEffect, useRef, useState } from './lib.js';
-import { getPref, setPref, DayPill } from './ui.js';
+import { getPref, setPref, DayDots } from './ui.js';
 import { catOf, catIdOf, safeColor } from './util.js';
 import { PlaceDetails } from './place-panel.js';
 
@@ -32,10 +32,11 @@ let currentMap = null;
 export const getCurrentMap = () => currentMap;
 
 /** Règle de visibilité combinant le filtre catégories et le filtre journées. */
-export function isPlaceVisible(place, day, hiddenCats, hiddenDays) {
+// planned = journées où le lieu est prévu (peut être vide ou en contenir plusieurs).
+export function isPlaceVisible(place, planned, hiddenCats, hiddenDays) {
   const cat = catIdOf(place);
   if (hiddenCats.includes(cat)) return false;
-  if (day) return !hiddenDays.includes(day.id);
+  if (planned?.length) return planned.some((d) => !hiddenDays.includes(d.id));
   // Un hébergement non planifié reste toujours visible (sauf si sa catégorie est masquée).
   if (cat === 'lodging') return true;
   return !hiddenDays.includes('unplanned');
@@ -138,8 +139,8 @@ export function MapPanel({
     const seen = new Set();
     for (const p of places) {
       if (p.lat == null || p.lng == null) continue;
-      const day = assignments.get(p.id);
-      if (!isPlaceVisible(p, day, hiddenCats, hiddenDays)) continue;
+      const planned = assignments.get(p.id) || [];
+      if (!isPlaceVisible(p, planned, hiddenCats, hiddenDays)) continue;
       seen.add(p.id);
       let m = ms.get(p.id);
       if (!m) {
@@ -157,8 +158,16 @@ export function MapPanel({
       el.dataset.id = p.id;
       el.title = p.name;
       m.setLngLat([p.lng, p.lat]);
-      const color = day ? safeColor(day.color) : null;
-      el.innerHTML = `<span class="pin${color ? ' planned' : ''}"${color ? ` style="background:${color};border-color:${color}"` : ''}>${catOf(p.category).icon}</span>`;
+      // Couleur des journées affichées ; plusieurs journées = marqueur partagé en parts de couleur.
+      const colors = planned.filter((d) => !hiddenDays.includes(d.id)).map((d) => safeColor(d.color));
+      let style = '';
+      if (colors.length === 1) style = `background:${colors[0]};border-color:${colors[0]}`;
+      else if (colors.length > 1) {
+        const step = 360 / colors.length;
+        const stops = colors.map((c, i) => `${c} ${i * step}deg ${(i + 1) * step}deg`).join(',');
+        style = `background:conic-gradient(${stops});border-color:#fff`;
+      }
+      el.innerHTML = `<span class="pin${colors.length ? ' planned' : ''}"${style ? ` style="${style}"` : ''}>${catOf(p.category).icon}</span>`;
       el.classList.toggle('selected', selected.id === p.id);
     }
     for (const [id, m] of ms) {
@@ -188,7 +197,7 @@ export function MapPanel({
   };
 
   const sel = places.find((p) => p.id === selected.id);
-  const selDay = sel && assignments.get(sel.id);
+  const selPlanned = (sel && assignments.get(sel.id)) || [];
 
   return html`
     <div class=${'map-wrap' + (picking ? ' picking' : '') + (satellite ? ' sat' : '')}>
@@ -206,11 +215,11 @@ export function MapPanel({
           <div class="map-card-head">
             <span class="p-icon">${catOf(sel.category).icon}</span>
             <strong>${sel.name}</strong>
-            ${selDay && html`<${DayPill} day=${selDay} />`}
+            <${DayDots} days=${selPlanned} />
             <span class="spacer"></span>
             <button class="icon-btn small" onClick=${() => onSelect(null)} aria-label="Fermer">✕</button>
           </div>
-          <${PlaceDetails} place=${sel} day=${selDay} days=${days} onEdit=${onEdit} />
+          <${PlaceDetails} place=${sel} planned=${selPlanned} days=${days} onEdit=${onEdit} />
         </div>`}
     </div>`;
 }

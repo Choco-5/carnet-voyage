@@ -205,22 +205,27 @@ export const actions = {
     });
   },
 
-  /** Affecte un lieu à une journée (ou le désaffecte si dayId est vide). Pas de copie. */
+  /** Ajoute un lieu à une journée (un lien vers le lieu, pas une copie).
+   *  Un lieu peut être prévu plusieurs jours, mais une seule fois par journée. */
   assignPlace(placeId, dayId, index) {
     commit((d) => {
-      const old = d.items.find((i) => i.type === 'place' && i.placeId === placeId);
-      removeItemsWhere(d, (i) => i.type === 'place' && i.placeId === placeId);
-      if (dayId) {
-        insertItem(d, dayId, { id: old?.id || uid(), type: 'place', placeId, time: old?.time || '' }, index);
-      }
+      const existing = d.items.find((i) => i.type === 'place' && i.placeId === placeId && i.dayId === dayId);
+      if (existing) removeItemsWhere(d, (i) => i.id === existing.id);
+      insertItem(d, dayId, existing || { id: uid(), type: 'place', placeId, time: '' }, index);
     });
+  },
+  /** Retire un lieu d'une journée précise. */
+  unassignPlace(placeId, dayId) {
+    commit((d) => removeItemsWhere(d, (i) => i.type === 'place' && i.placeId === placeId && i.dayId === dayId));
   },
   moveItem(itemId, dayId, index) {
     commit((d) => {
       const it = d.items.find((i) => i.id === itemId);
       if (!it) return;
       removeItemsWhere(d, (i) => i.id === itemId);
-      insertItem(d, dayId, { ...it }, index);
+      // Si le lieu est déjà prévu dans la journée d'arrivée, on ne crée pas de doublon.
+      const dup = it.type === 'place' && it.dayId !== dayId && d.items.some((i) => i.type === 'place' && i.placeId === it.placeId && i.dayId === dayId);
+      if (!dup) insertItem(d, dayId, { ...it }, index);
     });
   },
   removeItem: (itemId) => commit((d) => removeItemsWhere(d, (i) => i.id === itemId)),

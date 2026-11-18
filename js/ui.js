@@ -119,6 +119,15 @@ export function DayPill({ day }) {
   return html`<span class="day-pill" style=${{ background: safeColor(day.color) }}>${dayShort(day.date)}</span>`;
 }
 
+// ---- Petits ronds : un par journée où le lieu est prévu ----
+export function DayDots({ days }) {
+  if (!days?.length) return null;
+  const names = days.map((d) => dayShort(d.date)).join(', ');
+  return html`<span class="day-dots" title=${'Prévu : ' + names} aria-label=${'Prévu : ' + names}>
+    ${days.map((d) => html`<span class="day-dot" style=${{ background: safeColor(d.color) }}></span>`)}
+  </span>`;
+}
+
 // ---- Petit point : affiché / masqué sur la carte ----
 export function Dot({ on, color, onClick, label }) {
   const c = color ? safeColor(color) : 'var(--ink)';

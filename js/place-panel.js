@@ -3,8 +3,8 @@
 //  - le petit point = afficher / masquer la catégorie sur la carte
 import { html, useState, useRef, useEffect } from './lib.js';
 import { actions, getData } from './store.js';
-import { DayPill, Dot, copyText } from './ui.js';
-import { CATEGORIES, CAT_COLORS, catOf, catIdOf, catColor, dayShort, mapsUrl, norm } from './util.js';
+import { DayDots, Dot, copyText } from './ui.js';
+import { CATEGORIES, CAT_COLORS, catOf, catIdOf, catColor, dayShort, mapsUrl, norm, safeColor } from './util.js';
 import { useSortable, revertDom } from './dnd.js';
 
 export function PlacePanel({
@@ -105,7 +105,7 @@ function CategoryGroup({ cat, items, hidden, isCollapsed, onToggleCat, onToggleC
         ${items.map((p) => html`<${PlaceRow}
           key=${p.id}
           place=${p}
-          day=${assignments.get(p.id)}
+          planned=${assignments.get(p.id) || []}
           days=${days}
           isSelected=${selected.id === p.id}
           fromMap=${selected.source === 'map'}
@@ -116,7 +116,7 @@ function CategoryGroup({ cat, items, hidden, isCollapsed, onToggleCat, onToggleC
     </div>`;
 }
 
-function PlaceRow({ place, day, days, isSelected, fromMap, onSelect, onEdit }) {
+function PlaceRow({ place, planned, days, isSelected, fromMap, onSelect, onEdit }) {
   const ref = useRef();
   useEffect(() => {
     if (isSelected && fromMap) setTimeout(() => ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 50);
@@ -128,14 +128,14 @@ function PlaceRow({ place, day, days, isSelected, fromMap, onSelect, onEdit }) {
         <span class="p-icon" aria-hidden="true">${cat.icon}</span>
         <span class="p-name">${place.name}</span>
         ${place.lat == null && html`<span class="no-pos" title="Pas de position : ce lieu n'apparaît pas sur la carte">sans position</span>`}
-        ${day && html`<${DayPill} day=${day} />`}
+        <${DayDots} days=${planned} />
       </div>
-      ${isSelected && html`<${PlaceDetails} place=${place} day=${day} days=${days} onEdit=${onEdit} />`}
+      ${isSelected && html`<${PlaceDetails} place=${place} planned=${planned} days=${days} onEdit=${onEdit} />`}
     </li>`;
 }
 
 /** Détails d'un lieu (utilisé dans PLACE et dans la carte). */
-export function PlaceDetails({ place, day, days, onEdit }) {
+export function PlaceDetails({ place, planned, days, onEdit }) {
   const hasPos = place.lat != null && place.lng != null;
   return html`
     <div class="details">
@@ -149,11 +149,23 @@ export function PlaceDetails({ place, day, days, onEdit }) {
             </button>`
           : html`<div class="muted small">Pas d'adresse ni de position.</div>`}
       ${place.notes && html`<div class="notes"><span class="notes-label">Mes notes</span>${place.notes}</div>`}
+      ${days.length > 0 && html`
+        <div class="day-chips" role="group" aria-label="Journées prévues">
+          <span class="day-chips-label">Prévu :</span>
+          ${days.map((d) => {
+            const on = planned.some((x) => x.id === d.id);
+            const c = safeColor(d.color);
+            return html`<button
+              key=${d.id}
+              class=${'day-chip' + (on ? ' on' : '')}
+              style=${on ? { background: c, borderColor: c } : { borderColor: c }}
+              aria-pressed=${on}
+              title=${on ? 'Retirer de ' + dayShort(d.date) : 'Ajouter à ' + dayShort(d.date)}
+              onClick=${() => (on ? actions.unassignPlace(place.id, d.id) : actions.assignPlace(place.id, d.id))}
+            >${on ? '✓ ' : ''}${dayShort(d.date)}</button>`;
+          })}
+        </div>`}
       <div class="details-actions">
-        <select class="day-select" value=${day?.id || ''} onChange=${(e) => actions.assignPlace(place.id, e.target.value || null)} aria-label="Journée">
-          <option value="">Non planifié</option>
-          ${days.map((d) => html`<option value=${d.id}>${dayShort(d.date)}</option>`)}
-        </select>
         ${(hasPos || place.address) && html`<a class="btn small" href=${mapsUrl(place)} target="_blank" rel="noopener">Ouvrir dans Maps</a>`}
         <button class="btn small" onClick=${() => onEdit(place.id)}>Modifier</button>
       </div>

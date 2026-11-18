@@ -83,13 +83,18 @@ export function daysOf(data, destId) {
 export function itemsOf(data, dayId) {
   return data.items.filter((i) => i.dayId === dayId).sort(byOrder);
 }
-/** Map placeId -> journée à laquelle le lieu est affecté. */
+/** Map placeId -> liste des journées (triées par date) où le lieu est prévu. Un lieu peut être prévu plusieurs jours. */
 export function assignmentMap(data) {
   const dayById = new Map(data.days.map((d) => [d.id, d]));
   const m = new Map();
   for (const it of data.items) {
-    if (it.type === 'place' && dayById.has(it.dayId)) m.set(it.placeId, dayById.get(it.dayId));
+    if (it.type !== 'place' || !dayById.has(it.dayId)) continue;
+    const list = m.get(it.placeId) || [];
+    const day = dayById.get(it.dayId);
+    if (!list.includes(day)) list.push(day);
+    m.set(it.placeId, list);
   }
+  for (const list of m.values()) list.sort((a, b) => a.date.localeCompare(b.date));
   return m;
 }
 /** Destinations d'un voyage, dans l'ordre de leur première journée. */
