@@ -121,7 +121,7 @@ export function DayPill({ day }) {
 
 // ---- Petit point : affiché / masqué sur la carte ----
 export function Dot({ on, color, onClick, label }) {
-  const c = safeColor(color || '#1f2328');
+  const c = color ? safeColor(color) : 'var(--ink)';
   return html`<button
     class=${'dot' + (on ? ' on' : '')}
     aria-pressed=${on}
@@ -132,6 +132,23 @@ export function Dot({ on, color, onClick, label }) {
       onClick();
     }}
   ><span style=${on ? { background: c, borderColor: c } : { borderColor: c }}></span></button>`;
+}
+
+// ---- Mode nuit ----
+export function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light';
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1d2023' : '#1f6f5c');
+}
+export function ThemeToggle() {
+  const [theme, setTheme] = useState(() => getPref('theme', 'light'));
+  const toggle = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setPref('theme', next);
+    applyTheme(next);
+    setTheme(next);
+  };
+  const label = theme === 'dark' ? 'Passer en mode jour' : 'Passer en mode nuit';
+  return html`<button class="icon-btn theme-btn" onClick=${toggle} title=${label} aria-label=${label}>${theme === 'dark' ? '☀️' : '🌙'}</button>`;
 }
 
 export function useAutoFocus() {

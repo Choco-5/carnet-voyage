@@ -2,7 +2,7 @@
 //  - fichiers de l'application : réseau d'abord (toujours à jour), cache en secours
 //  - bibliothèques (CDN, versions figées) : cache d'abord
 //  - carte : tuiles, polices, icônes en cache d'abord ; style en réseau d'abord
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL = 'shell-' + VERSION;
 const MAP = 'map-v1';
 

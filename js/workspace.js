@@ -1,7 +1,7 @@
 // Espace d'une destination : barre du haut + trois panneaux indépendants PLACE | MAP | ORGANISATION.
 import { html, useState, useRef } from './lib.js';
 import { actions, getData } from './store.js';
-import { usePref, useIsMobile, useOnline, navigate, toast } from './ui.js';
+import { usePref, useIsMobile, useOnline, navigate, toast, ThemeToggle } from './ui.js';
 import { assignmentMap, daysOf, orderedDestinations, CATEGORIES } from './util.js';
 import { PlacePanel } from './place-panel.js';
 import { MapPanel } from './map-panel.js';
@@ -149,6 +149,7 @@ export function Workspace({ destId }) {
         onToggleCollapse=${(c) => setCollapsed((h) => toggleIn(h, c))}
         onExpand=${(c) => setCollapsed((h) => h.filter((x) => x !== c))}
         selected=${selected} onSelect=${(id) => select(id, 'list')} onEdit=${openEdit}
+        onAdd=${() => openAdd()}
       />`;
     if (k === 'map')
       return html`<${MapPanel}
@@ -189,8 +190,9 @@ export function Workspace({ destId }) {
         </div>
         <span class="spacer"></span>
         ${!online && html`<span class="offline-badge" title="Pas de connexion : les modifications sont enregistrées sur l'appareil">Hors ligne</span>`}
+        <${ThemeToggle} />
         <button class="icon-btn" title="Carte hors connexion" aria-label="Carte hors connexion" onClick=${() => setShowOffline(true)}>⤓</button>
-        <button class="btn primary add-btn" onClick=${() => openAdd()}>${isMobile ? '+' : '+ Ajouter'}</button>
+        ${!panels.place && html`<button class="btn primary add-btn" onClick=${() => openAdd()} title="Ajouter un lieu">${isMobile ? '+' : '+ Ajouter'}</button>`}
       </header>
       <div class=${'ws-panels ' + (isMobile ? 'vertical' : 'horizontal')} ref=${containerRef}>${children}</div>
       ${form && !picking && html`<${PlaceForm}

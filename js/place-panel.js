@@ -9,7 +9,7 @@ import { useSortable, revertDom } from './dnd.js';
 
 export function PlacePanel({
   places, days, assignments, hiddenCats, onToggleCat, onSetAllCats,
-  collapsed, onToggleCollapse, onExpand, selected, onSelect, onEdit,
+  collapsed, onToggleCollapse, onExpand, selected, onSelect, onEdit, onAdd,
 }) {
   const [q, setQ] = useState('');
   const filtered = q ? places.filter((p) => norm(p.name + ' ' + p.notes + ' ' + p.address).includes(norm(q))) : places;
@@ -31,6 +31,7 @@ export function PlacePanel({
       <div class="panel-head">
         <h3>PLACE</h3>
         <span class="count">${places.length}</span>
+        <button class="add-place-btn" onClick=${onAdd} title="Ajouter un lieu" aria-label="Ajouter un lieu">+</button>
         <span class="spacer"></span>
         ${present.length > 0 && html`<button class="link" onClick=${() => onSetAllCats(!allHidden)}>${allHidden ? 'Tout afficher' : 'Tout masquer'} sur la carte</button>`}
       </div>
@@ -56,7 +57,6 @@ export function PlacePanel({
           onEdit=${onEdit}
         />`)}
       </div>
-      ${places.length > 0 && days.length > 0 && html`<div class="panel-foot">Glisse un lieu vers une journée d'ORGANISATION (appui long sur téléphone), ou choisis sa journée dans sa fiche.</div>`}
     </div>`;
 }
 
@@ -78,10 +78,10 @@ function CategoryGroup({ cat, items, hidden, isCollapsed, onToggleCat, onToggleC
     },
   });
   return html`
-    <div class=${'cat-group' + (hidden ? ' map-hidden' : '')}>
+    <div class=${'cat-group' + (hidden ? ' map-hidden' : '') + (isCollapsed ? '' : ' open')}>
       <div class="cat-head">
         <button class="cat-toggle" onClick=${() => onToggleCollapse(cat.id)} aria-expanded=${!isCollapsed}>
-          <span class="chev">${isCollapsed ? '▸' : '▾'}</span>
+          <span class="chev" aria-hidden="true">▶</span>
           <span class="cat-icon">${cat.icon}</span>
           <span class="cat-label">${cat.label}</span>
           <span class="count">${items.length}</span>

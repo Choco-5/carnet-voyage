@@ -1,7 +1,7 @@
 // Point d'entrée : routage, accueil « Mes voyages », page d'un voyage (destinations + calendrier).
 import { html, render, useState, useEffect, useRef } from './lib.js';
 import { loadData, actions, getData, flush, DATA_VERSION } from './store.js';
-import { useData, ToastHost, Modal, navigate, toast, useAutoFocus } from './ui.js';
+import { useData, ToastHost, Modal, navigate, toast, useAutoFocus, ThemeToggle, applyTheme, getPref } from './ui.js';
 import { Workspace } from './workspace.js';
 import {
   datesBetween, dayLong, formatRange, orderedDestinations, itemsOf, todayISO, safeColor,
@@ -50,6 +50,8 @@ function Home({ data }) {
     <div class="page">
       <header class="page-head">
         <h1>Mes voyages</h1>
+        <span class="spacer"></span>
+        <${ThemeToggle} />
         <button class="btn primary" onClick=${() => setCreating(true)}>+ Nouveau voyage</button>
       </header>
       ${trips.length === 0 && html`<div class="empty">Aucun voyage pour l'instant. Crée ton premier voyage pour commencer.</div>`}
@@ -176,6 +178,7 @@ function TripPage({ data, tripId }) {
     <div class="page">
       <header class="page-head">
         <a class="back" href="#/">← Mes voyages</a>
+        <${ThemeToggle} />
       </header>
       <div class="trip-title">
         <div>
@@ -308,6 +311,7 @@ function DestinationEdit({ dest, onClose }) {
 
 // ================= Démarrage =================
 async function boot() {
+  applyTheme(getPref('theme', 'light'));
   await loadData();
   try {
     navigator.storage?.persist?.();
