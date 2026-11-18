@@ -9,7 +9,11 @@ import { useSortable, revertDom } from './dnd.js';
 // Sur écran tactile, le champ heure natif (sélecteur Android) est posé directement sur la pastille.
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 
-export function OrgaPanel({ dest, trip, days, places, hiddenDays, onToggleDay, onSetAllDays, selected, onSelect }) {
+export function OrgaPanel({
+  dest, trip, days, places, hiddenDays, onToggleDay, onSetAllDays, selected, onSelect,
+  collapsedDays, onToggleCollapseDay, onSetAllCollapsed,
+}) {
+  const allCollapsed = days.length > 0 && days.every((d) => collapsedDays.includes(d.id));
   const data = getData();
   const placesById = new Map(places.map((p) => [p.id, p]));
   const planned = new Set(data.items.filter((i) => i.type === 'place').map((i) => i.placeId));
@@ -22,12 +26,13 @@ export function OrgaPanel({ dest, trip, days, places, hiddenDays, onToggleDay, o
     <div class="panel-inner">
       <div class="panel-head">
         <h3>ORGANISATION</h3>
+        ${days.length > 0 && html`<button class="link" onClick=${() => onSetAllCollapsed(!allCollapsed)}>${allCollapsed ? 'Tout déplier' : 'Tout replier'}</button>`}
         <span class="spacer"></span>
         <button class="link" onClick=${() => onSetAllDays(!allHidden)}>${allHidden ? 'Tout afficher' : 'Tout masquer'} sur la carte</button>
       </div>
       <div class="panel-scroll">
         <div class="unplanned-row">
-          <span class="swatch" style=${{ background: '#fff', borderColor: NEUTRAL }}></span>
+          <span class="swatch" style=${{ background: 'var(--surface)', borderColor: NEUTRAL }}></span>
           <span>Non planifiés</span>
           <span class="count">${unplannedCount}</span>
           <span class="spacer"></span>
@@ -41,6 +46,8 @@ export function OrgaPanel({ dest, trip, days, places, hiddenDays, onToggleDay, o
           placesById=${placesById}
           hidden=${hiddenDays.includes(day.id)}
           onToggle=${() => onToggleDay(day.id)}
+          collapsed=${collapsedDays.includes(day.id)}
+          onToggleCollapse=${() => onToggleCollapseDay(day.id)}
           selected=${selected}
           onSelect=${onSelect}
         />`)}
@@ -55,7 +62,7 @@ export function OrgaPanel({ dest, trip, days, places, hiddenDays, onToggleDay, o
     </div>`;
 }
 
-function DayBlock({ day, items, placesById, hidden, onToggle, selected, onSelect }) {
+function DayBlock({ day, items, placesById, hidden, onToggle, collapsed, onToggleCollapse, selected, onSelect }) {
   const listRef = useRef();
   const [colorOpen, setColorOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -77,6 +84,7 @@ function DayBlock({ day, items, placesById, hidden, onToggle, selected, onSelect
   });
 
   const placeCount = items.filter((i) => i.type === 'place').length;
+  const notes = items.filter((i) => i.type === 'note');
   const del = () => {
     const msg = items.length
       ? `Supprimer la journée du ${dayLong(day.date)} ?\n\nSes lieux redeviennent non planifiés (ils restent dans PLACE) et ses notes sont supprimées.`
@@ -91,12 +99,14 @@ function DayBlock({ day, items, placesById, hidden, onToggle, selected, onSelect
   };
 
   return html`
-    <div class=${'day-block' + (hidden ? ' map-hidden' : '')} style=${{ '--day': color }}>
+    <div class=${'day-block' + (hidden ? ' map-hidden' : '') + (collapsed ? '' : ' open')} style=${{ '--day': color }}>
       <div class="day-head">
         <button class="swatch" style=${{ background: color, borderColor: color }} onClick=${() => setColorOpen(!colorOpen)} title="Changer la couleur" aria-label="Changer la couleur"></button>
-        <div class="day-title">${dayLong(day.date)}</div>
-        <span class="count">${placeCount}</span>
-        <span class="spacer"></span>
+        <button class="day-toggle" onClick=${onToggleCollapse} aria-expanded=${!collapsed} title=${collapsed ? 'Déplier la journée' : 'Replier la journée'}>
+          <span class="chev" aria-hidden="true">▶</span>
+          <span class="day-title">${dayLong(day.date)}</span>
+          <span class="count">${placeCount}</span>
+        </button>
         <${Dot} on=${!hidden} color=${color} label=${dayLong(day.date)} onClick=${onToggle} />
         <button class="icon-btn small" title="Supprimer la journée" aria-label="Supprimer la journée" onClick=${del}>🗑</button>
       </div>
@@ -109,7 +119,12 @@ function DayBlock({ day, items, placesById, hidden, onToggle, selected, onSelect
             onClick=${() => { actions.setDayColor(day.id, c); setColorOpen(false); }}
           ></button>`)}
         </div>`}
-      <ul class="day-list" data-day=${day.id} ref=${listRef}>
+      ${collapsed && html`
+        <button class="day-summary" onClick=${onToggleCollapse} title="Déplier la journée">
+          <span class="day-summary-count">${placeCount === 0 ? 'Aucun lieu' : placeCount === 1 ? '1 lieu prévu' : `${placeCount} lieux prévus`}</span>
+          ${notes.map((n) => html`<span class="day-summary-note">📝 ${n.time ? n.time + ' ' : ''}${n.text}</span>`)}
+        </button>`}
+      <ul class="day-list" data-day=${day.id} ref=${listRef} hidden=${collapsed}>
         ${items.map((it) => html`<${DayItem}
           key=${it.id}
           item=${it}
@@ -118,7 +133,7 @@ function DayBlock({ day, items, placesById, hidden, onToggle, selected, onSelect
           onSelect=${onSelect}
         />`)}
       </ul>
-      <div class="day-foot">
+      <div class="day-foot" hidden=${collapsed}>
         ${noteOpen
           ? html`<form class="note-form" onSubmit=${addNote}>
               <input value=${noteText} onInput=${(e) => setNoteText(e.target.value)} placeholder="ex. Train 10h → 12h" ref=${(el) => el && !el.dataset.f && (el.dataset.f = 1, el.focus())} />

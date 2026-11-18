@@ -97,4 +97,7 @@ Organisation du code (`js/`) : `store.js` (données et actions), `app.js` (accue
 - Les préférences d'affichage et la carte téléchargée sont propres à chaque appareil, elles ne sont pas exportées.
 - La recherche d'adresse ne trouve pas tous les restaurants. On peut toujours placer le lieu à la main
   sur la carte.
+- La vue satellite (imagerie Esri World Imagery) ne fonctionne qu'avec une connexion et n'est pas téléchargée
+  pour le hors connexion. Elle est utilisée sans clé, pour un usage personnel ; un usage public ou commercial
+  demanderait un compte ArcGIS (gratuit jusqu'à un certain volume).
 - Les noms des rues de la carte s'affichent selon les données OpenStreetMap (souvent en grec et en anglais).

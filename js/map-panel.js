@@ -7,6 +7,27 @@ import { PlaceDetails } from './place-panel.js';
 
 export const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 
+// Vue satellite : imagerie Esri World Imagery (en ligne uniquement, non téléchargée pour le hors connexion).
+const SAT_SOURCE = {
+  type: 'raster',
+  tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+  tileSize: 256,
+  maxzoom: 19,
+  attribution: 'Imagerie © Esri, Maxar, Earthstar Geographics',
+};
+function setSatellite(map, on) {
+  if (!map.isStyleLoaded() && !map.getStyle()) return;
+  const has = !!map.getLayer('satellite');
+  if (on && !has) {
+    if (!map.getSource('satellite')) map.addSource('satellite', SAT_SOURCE);
+    // Sous les libellés (noms de rues et de lieux restent visibles par-dessus l'image)
+    const firstSymbol = map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
+    map.addLayer({ id: 'satellite', type: 'raster', source: 'satellite' }, firstSymbol);
+  } else if (!on && has) {
+    map.removeLayer('satellite');
+  }
+}
+
 let currentMap = null;
 export const getCurrentMap = () => currentMap;
 
@@ -30,6 +51,16 @@ export function MapPanel({
   const lastMarkerClick = useRef(0);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [satellite, setSatPref] = useState(() => getPref('satellite', false));
+  const toggleSatellite = () => {
+    const next = !satellite;
+    setPref('satellite', next);
+    setSatPref(next);
+  };
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && ready) setSatellite(map, satellite);
+  }, [satellite, ready]);
   const cb = useRef();
   cb.current = { onSelect, onPick, picking, onAddAt };
 
@@ -160,11 +191,13 @@ export function MapPanel({
   const selDay = sel && assignments.get(sel.id);
 
   return html`
-    <div class=${'map-wrap' + (picking ? ' picking' : '')}>
+    <div class=${'map-wrap' + (picking ? ' picking' : '') + (satellite ? ' sat' : '')}>
       <div class="map" ref=${elRef}></div>
       ${failed && html`<div class="map-error">La carte n'a pas pu être chargée. Vérifie ta connexion, ou télécharge la carte hors connexion lors de ta prochaine connexion.</div>`}
       <div class="map-tools">
         <button class="map-btn" onClick=${fitAll} title="Voir tous les lieux affichés">⤢ Mes lieux</button>
+        <button class=${'map-btn' + (satellite ? ' on' : '')} onClick=${toggleSatellite} aria-pressed=${satellite}
+          title=${satellite ? 'Revenir au plan' : 'Vue satellite (nécessite une connexion)'}>${satellite ? '🗺️ Plan' : '🛰️ Satellite'}</button>
       </div>
       ${picking && html`<div class="pick-banner">Touche la carte pour placer le lieu <button class="btn small" onClick=${onCancelPick}>Annuler</button></div>`}
       ${!picking && ready && places.length === 0 && html`<div class="map-hint">Astuce : clic droit (ou appui long) sur la carte pour ajouter un lieu à cet endroit.</div>`}

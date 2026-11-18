@@ -34,6 +34,7 @@ export function Workspace({ destId }) {
   const [hiddenCats, setHiddenCats] = usePref('hidden-cats:' + destId, []);
   const [hiddenDays, setHiddenDays] = usePref('hidden-days:' + destId, []);
   const [collapsed, setCollapsed] = usePref('collapsed:' + destId, []);
+  const [collapsedDays, setCollapsedDays] = usePref('collapsed-days:' + destId, []);
 
   const [selected, setSelected] = useState({ id: null, source: null });
   const [form, setForm] = useState(null); // { placeId, draft }
@@ -165,6 +166,9 @@ export function Workspace({ destId }) {
       hiddenDays=${hiddenDays}
       onToggleDay=${(id) => setHiddenDays((h) => toggleIn(h, id))}
       onSetAllDays=${(hide) => setHiddenDays(hide ? [...days.map((d) => d.id), 'unplanned'] : [])}
+      collapsedDays=${collapsedDays}
+      onToggleCollapseDay=${(id) => setCollapsedDays((h) => toggleIn(h, id))}
+      onSetAllCollapsed=${(c) => setCollapsedDays(c ? days.map((d) => d.id) : [])}
       selected=${selected} onSelect=${(id) => select(id, 'list')}
     />`;
   };
